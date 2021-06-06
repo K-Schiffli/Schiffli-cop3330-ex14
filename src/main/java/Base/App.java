@@ -4,6 +4,10 @@
  */
 package Base;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.Scanner;
 
 public class App {
@@ -11,11 +15,12 @@ public class App {
 
     public static void main( String[] args )
     {
-        double price = 1.00;
+        BigDecimal price = new BigDecimal ("1.00");
+        BigDecimal taxRate = new BigDecimal ("0.055");
         String order = getData("order amount");
         String state = getData("state");
-        int orderNum = stringToInt(order);
-        String output = calcTotal (orderNum, state, price);
+        BigDecimal orderQuant = stringToBigDecimal(order);
+        String output = calcTotal (orderQuant, state, price, taxRate);
         printOutput(output);
     }
     public static String getData(String phrase)
@@ -24,34 +29,29 @@ public class App {
         return in.nextLine();
     }
 
-    public static int stringToInt(String number)
+    public static BigDecimal stringToBigDecimal(String number)
     {
-        return Integer.parseInt(number);
+        BigDecimal result = new BigDecimal(number);
+        return result;
     }
 
-    public static String calcTotal(double orderNum, String state, double price)
+    public static String calcTotal(BigDecimal orderQuant, String state, BigDecimal price, BigDecimal taxRate)
     {
-        double total = orderNum * price;
+        DecimalFormat decFormat = new DecimalFormat("#,###.00");
+        BigDecimal total = new BigDecimal(String.valueOf(orderQuant.multiply(price)));
         if (state.equals("WI"))
         {
-            int subtotal = (int)total;
-            double tax = total * 0.055;
-            tax = roundToCent(tax);
-            total += tax;
-            total = roundToCent(total);
-            return "The subtotal is $" + subtotal +".00\nThe tax is $" + tax +
-                    "\nThe total is $" + total;
+            BigDecimal subtotal = total;
+            BigDecimal tax = total.multiply(taxRate);
+            tax = tax.round(new MathContext(10, RoundingMode.CEILING));
+            total = total.add(tax);
+            total = total.round(new MathContext(10, RoundingMode.CEILING));
+            return "The subtotal is $" + decFormat.format(subtotal) +"\nThe tax is $" + decFormat.format(tax) +
+                    "\nThe total is $" + decFormat.format(total);
         }
 
-        total = roundToCent(total);
-        return "The total is $" + total + "0";
-    }
-
-    public static double roundToCent(double money)
-    {
-        money *= 100;
-        money = Math.ceil(money);
-        return money / 100;
+        total = total.round(new MathContext(10, RoundingMode.CEILING));
+        return "The total is $" + decFormat.format(total);
     }
 
     public static void printOutput (String output)
